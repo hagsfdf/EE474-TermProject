@@ -4,6 +4,11 @@
 
 막 추가해주세요!
 
+## 데이터베이스 만들기
+
+- [importing](https://cyc1am3n.github.io/2018/09/13/how-to-use-dataset-in-tensorflow.html)
+- [creating](https://stackoverflow.com/questions/37340129/tensorflow-training-on-my-own-image)
+
 ## 크롤링 관하여
 
 - [basic crawling using bs4](https://twpower.github.io/84-how-to-use-beautiful-soup)
@@ -16,3 +21,4 @@
 - [구찌](https://www.gucci.com/kr/ko/ca/men/mens-shoes/mens-moccasins-loafers-c-men-shoes-moccasins-loafers)
 - [크록스](https://www.crocs.co.kr/c/men)
 - 그 외 많ㄷ...
+
