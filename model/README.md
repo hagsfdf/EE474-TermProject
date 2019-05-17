@@ -1,3 +1,4 @@
 # Deeplearning model
 
-ㅁㄴㅇㄹ
+hangel an dem T.T
+
