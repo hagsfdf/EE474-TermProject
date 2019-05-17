@@ -45,7 +45,7 @@ def main():
             textPrice = webPrice[num].get_text('')
             # print(fullLink, textPrice)
             price = int(''.join(textPrice[:-1].split(',')))
-            dirIm = "image/"+ "{:06d}".format(num+1)+ ".jpg"
+            dirIm = "image/"+ "{:06d}".format(num+1+int(page)*20)+ ".jpg"
             urllib.request.urlretrieve(fullLink, dirIm)
             result.append((dirIm, price))
     dtype = [('dir','U16'),('price',int)]
