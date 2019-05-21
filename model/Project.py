@@ -23,7 +23,7 @@ def label_loading():
             one_hot[i, :] = [1, 0, 0, 0]
         elif label < 100000:
             one_hot[i, :] = [0, 1, 0, 0]
-        elif label < 1500000:
+        elif label < 150000:
             one_hot[i, :] = [0, 0, 1, 0]
         elif label < 200000:
             one_hot[i, :] = [0, 0, 0, 1]
