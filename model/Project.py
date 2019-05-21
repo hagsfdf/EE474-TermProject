@@ -119,8 +119,8 @@ def main():
     gt = tf.placeholder(tf.float32, shape= [None, 4], name = 'y')
 
     with tf.name_scope('Loss'):
-        pixel_loss = tf.reduce_mean(tf.square(predicted - gt))
-        tf.summary.scalar('pixel_loss', pixel_loss)
+        label_loss = tf.reduce_mean(tf.square(predicted - gt))
+        tf.summary.scalar('label_loss', label_loss)
 
     optimizer = tf.train.AdamOptimizer(learning_rate= lear_rate, beta1= bta1, beta2= bta2, epsilon= epsln).minimize(pixel_loss)
 
