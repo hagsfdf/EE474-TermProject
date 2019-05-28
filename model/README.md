@@ -7,6 +7,12 @@ hangel an dem T.T
 
 ### Image size
 
-image size : 180 X 180?
-color channel : 3 (RGB)
-angle, orientation : 제각각
+180 X 180?
+
+### Color channel
+
+3 (RGB)
+
+## Angle, orientation
+
+제각각
