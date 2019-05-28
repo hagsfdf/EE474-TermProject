@@ -28,15 +28,15 @@ def cam(img_path, label):
 
 
     with tf.Session() as sess:
-        saver = tf.train.import_meta_graph('./model/model.ckpt-5000.meta')
+        saver = tf.train.import_meta_graph('./model/model.ckpt-2200.meta')
         saver.restore(sess, tf.train.latest_checkpoint('./model/'))
 
         inp = sess.graph.get_tensor_by_name("x:0")
         conv_layer  = sess.graph.get_tensor_by_name('Conv_4/Relu:0')
-        fc_layer = sess.graph.get_tensor_by_name('FC_1/dropout/mul:0')
+        fc_layer = sess.graph.get_tensor_by_name('FC2/Tanh:0')
 
-        signal = tf.multiply(fc_layer, [1., 0.])
-        loss = tf.reduce_mean(signal)
+        signal = tf.multiply(fc_layer, label)
+        loss = tf.reduce_sum(signal)
 
         grads = tf.gradients(loss, conv_layer)[0]
         norm_grads = tf.div(grads, tf.sqrt(tf.reduce_mean(tf.square(grads))) + tf.constant(1e-5))
@@ -47,7 +47,7 @@ def cam(img_path, label):
         grads_val = grads_val[0]
 
         weights = np.mean(grads_val, axis=(0, 1))  # [512]
-        cam = np.ones(output.shape[0: 2], dtype=np.float32)  # [7,7]
+        cam = (1e-5)*np.zeros(output.shape[0: 2], dtype=np.float32)  # [7,7]
 
         # Taking a weighted average
         for i, w in enumerate(weights):
@@ -56,18 +56,20 @@ def cam(img_path, label):
         # Passing through ReLU
         cam = np.maximum(cam, 0)
         cam = cam / np.max(cam)
-        cam = np.resize(cam, (180, 180))
+        # cam = cv2.resize(cam, dsize= (180, 180))
 
         # Converting grayscale to 3-D
         cam3 = np.expand_dims(cam, axis=2)
         cam3 = np.tile(cam3, [1, 1, 3])
 
-
-        plt.imshow(cam3)
+        plt.imshow(cam, cmap = 'jet')
+        plt.colorbar()
         plt.show()
 
         output = 'output.jpg'
-        heatmap = cam3*0.4 + img * 0.6
+        heatmap = np.uint8(255* cam3)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+
         cv2.imwrite(output, heatmap)
 
     return None
