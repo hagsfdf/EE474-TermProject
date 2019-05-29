@@ -100,9 +100,8 @@ class CNN_model:
 
 
         print(np.shape(self.conv53))
-        self.pool4 = pool_layer(self.conv43)
         print(self.conv53.name)
-        pool_last = self.pool4
+        pool_last = self.pool5
 
         pool_shape = pool_last.get_shape().as_list()
 
@@ -113,8 +112,9 @@ class CNN_model:
         self.fc2 = fc_layer(self.fc1, 1024, 1024, dropoutProb=dropout, name = "FC1")
         self.fc3 = fc_layer(self.fc2, 1024, n_classes, dropoutProb=dropout, name= "FC3")
 
-        print(self.fc3.name)
+
         self.fc3 = tf.nn.softmax(self.fc3)
+        print(self.fc3.name)
 
         self.Pred = self.fc3
 
