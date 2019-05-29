@@ -22,3 +22,19 @@
 - [크록스](https://www.crocs.co.kr/c/men)
 - 그 외 많ㄷ...
 
+
+# 수많은 문제점
+
+## 모델 
+1. MNIST CNN 
+2. VGG-16 net (train accuracy 80~90% / test accuracy **40~50%**)
+3. ResNet 
+### Solution
+1. Brand + Image를 피쳐로 쓰는거
+    - ![MULTIPLEFEATURE](https://medium.com/all-of-us-are-belong-to-machines/gentlest-intro-to-tensorflow-part-3-matrices-multi-feature-linear-regression-30a81ebaaa6c)
+2. BN, dropout, 
+
+## 전처리 
+1. RGB normalization
+2. 윤곽선 검출 후에 ,
+3. 신발코를 detect Orientation으로 돌려놓는 것
