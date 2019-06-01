@@ -29,6 +29,7 @@
 1. MNIST CNN 
 2. VGG-16 net (train accuracy 80~90% / test accuracy **40~50%**)
 3. ResNet 
+
 ### Solution
 1. Brand + Image를 피쳐로 쓰는거
     - ![MULTIPLEFEATURE](https://medium.com/all-of-us-are-belong-to-machines/gentlest-intro-to-tensorflow-part-3-matrices-multi-feature-linear-regression-30a81ebaaa6c)
