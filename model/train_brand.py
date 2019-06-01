@@ -105,7 +105,7 @@ def main():
     is_train = tf.placeholder(tf.bool, name = 'is_train')
     model = CNN_model_brand()
 
-    predicted = model.build(input,brand, n_class, 180, 3, 1, is_train)
+    predicted = model.build(input,input_brand, n_class, 180, 3, 1, is_train)
 
     gt = tf.placeholder(tf.float32, shape=[None, n_class], name='y')
 
@@ -121,7 +121,7 @@ def main():
     images = img_loading()
     labeling = label_loading()
     brand = brand_loading()
-    
+
     with tf.Session() as sess:
 
         test_index = range(N - 3, N)
