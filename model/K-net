@@ -1,0 +1,171 @@
+from keras.applications.vgg16 import VGG16
+from keras.applications import ResNet50
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+from keras.applications.vgg16 import preprocess_input
+from keras.preprocessing.image import ImageDataGenerator
+from keras.models import load_model
+
+import os
+import tensorflow as tf
+import numpy as np
+from keras.layers import Input
+import datetime
+from keras import optimizers
+import matplotlib.pyplot as plt
+from keras.models import Model
+from keras.layers import Dense, Flatten, Dropout
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
+
+dir_data = "./image/"
+
+data = np.load(dir_data + "train_data.npy")
+filenames = data['dir']
+labels = data['price']
+N = 1000  #len(labels) # 1284
+n_class = 4
+
+
+def label_loading():
+    one_hot = np.zeros([N, n_class], dtype=np.float32)
+
+    for i in range(N):
+        label = labels[i]
+        if label < 37050: # 37050 , 52900, 69000
+            one_hot[i, :] = [1, 0, 0, 0]
+        elif label <= 52900:
+            one_hot[i, :] = [0, 1, 0, 0]
+        elif label <= 69000:
+            one_hot[i, :] = [0, 0, 1, 0]
+        else:
+            one_hot[i, :] = [0, 0, 0, 1]
+
+    print(sum(one_hot[:,0]), sum(one_hot[:,1]), sum(one_hot[:,2]), sum(one_hot[:,3]))
+    return one_hot
+
+def argmax2onehot(trained):
+    argmax = np.argmax(trained, axis=1)
+    n = np.shape(argmax)[0]
+
+    one_hot = np.zeros([n, n_class], dtype=np.float32)
+
+    for i in range(n):
+        if argmax[i] == 0:
+            one_hot[i, :] = [1, 0, 0, 0]
+        elif argmax[i] == 1:
+            one_hot[i, :] = [0, 1, 0 ,0]
+        elif argmax[i] == 2:
+            one_hot[i, :] = [0, 0, 1, 0]
+        elif argmax[i] == 3:
+            one_hot[i, :] = [0, 0, 0, 1]
+
+    return one_hot
+
+def img_loading():
+
+
+    for i in range(N):
+
+        filename = filenames[i]
+
+        if not os.path.exists(filename):
+            filename = filename[:12] + '.png'
+            if os.path.exists(filename):
+                img = load_img("./" + filename, target_size=(224, 224))
+                x = img_to_array(img)
+
+                x = np.expand_dims(x, axis=0)
+                x = preprocess_input(x)
+
+
+
+
+        else:
+            img = load_img("./"+filename, target_size=(224, 224))
+            x = img_to_array(img)
+            x = np.expand_dims(x, axis=0)
+            x = preprocess_input(x)
+
+        if i == 0:
+            img_dataset = x
+        else:
+            img_dataset = np.vstack([img_dataset, x])
+
+    return img_dataset
+
+
+
+def main():
+
+    images = img_loading()
+    labeling = label_loading()
+
+    # horizontal_flip=True
+    # brightness_range = [0.8, 1.0],
+    data_aug_gen = ImageDataGenerator(height_shift_range=0.1,
+                                      shear_range=0.2,
+                                      zoom_range=[0.8, 1.0],
+                                      fill_mode='nearest')
+    test_datagen = ImageDataGenerator(rescale=1.)
+
+    x, y = shuffle(images, labeling, random_state=2)
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state= 2)
+
+
+    image_input = Input(shape=(224, 224, 3))
+
+    vgg16_model = ResNet50(input_tensor = image_input, weights='imagenet', include_top=False)
+    x = vgg16_model.output
+    x = Flatten()(x)
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.4)(x)
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.4)(x)
+    predictions = Dense(4, activation='softmax')(x)
+
+
+    #
+    model = Model(input=image_input, output=predictions)
+    for layer in vgg16_model.layers:
+        layer.trainable = False
+
+    # print(model.summary())
+
+    rms = optimizers.RMSprop(lr=0.000005, rho=0.9, epsilon=None, decay=0.0)
+    model.compile(optimizer = rms, loss = 'mean_absolute_error',  metrics = ['accuracy'])
+    now = datetime.datetime.now
+    t = now()
+
+    model_json = model.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+
+    print(np.shape(X_train), np.shape(X_test))
+
+    train_batch = data_aug_gen.flow(X_train, y_train, batch_size= 32)
+
+    transfer_learning_history = model.fit_generator(train_batch, steps_per_epoch=25*4, epochs=300, verbose=2, validation_data=(X_test, y_test))
+
+    plt.figure(figsize=(8, 4))
+    plt.subplot(1, 2, 1)
+    plt.plot(transfer_learning_history.history['loss'])
+    plt.title("loss at train")
+    plt.ylabel("loss")
+    plt.subplot(1, 2, 2)
+    plt.title("loss at validation")
+    plt.ylabel("loss")
+    plt.plot(transfer_learning_history.history['acc'], 'b-', label="train")
+    plt.plot(transfer_learning_history.history['val_acc'], 'r:', label="validation")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    print('Training time: %s' % (now() - t))
+
+    model.save('model.h5')
+
+    out = model.predict(x= X_test)
+    print(argmax2onehot(out[0]))
+if __name__ == '__main__':
+    main()
