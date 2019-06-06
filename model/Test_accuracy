@@ -1,0 +1,138 @@
+import os
+import tensorflow as tf
+import numpy as np
+import cv2
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+from keras.applications.vgg16 import preprocess_input
+from keras.models import load_model
+import pandas as pd
+
+# predicted brand or price -> one hot encoding
+def argmax2onehot(trained):
+    argmax = np.argmax(trained)
+    shape = np.shape(trained)[-1]
+    one_hot = np.zeros([1, shape],dtype = np.float32)
+
+    one_hot[0][argmax] = 1
+    return one_hot
+
+# used for train price label by encoding one hot vector
+def price_one_hot(price):
+    if price < 59000:
+        one_hot = [1, 0, 0, 0]
+    elif price <= 99000:
+        one_hot = [0, 1, 0, 0]
+    elif price <= 186500:
+        one_hot = [0, 0, 1, 0]
+    else:
+        one_hot = [0, 0, 0, 1]
+
+    return one_hot
+
+# used for train brand label by encoding one hot vector
+def brand_one_hot(brand):
+    category = ['adidas','descente','fila','gucci','asics']
+    one_hot = np.isin(category, brand)
+    one_hot = np.array(one_hot, dtype = np.float32)
+    return one_hot
+
+
+def onlyimage(img, model_brand, model_price):
+
+    # predict brand of image
+    x = np.expand_dims(img, axis=0)
+    preds = model_brand.predict(x)
+
+    brand = argmax2onehot(preds)
+
+    preds = model_price.predict([x, brand])
+    price = argmax2onehot(preds)
+
+    return brand[0], price[0]
+
+
+
+def main():
+
+    basicDir = './imageBrand/train.npy'
+    data = np.load(basicDir)
+
+    print('data loading...')
+    print(data[:13])
+
+
+    correct_brand = 0.
+    correct_price = 0.
+    total = 0.
+
+    confusion_brand = np.zeros([5, 5])
+    confusion_price = np.zeros([4, 4])
+
+    model_brand = load_model('model_brand_predictor.h5')
+
+    print
+    model_price = load_model('model_price_predictor_with_brand_aug.h5')
+
+    print('model loading...')
+
+    for img_path, price, brand in data:
+        img_path = './imageBrand_valid/' + img_path[-10:]
+
+        if os.path.exists(img_path):
+            # image load with .jpg format
+            img = plt.imread(img_path)
+            img = np.array(img, dtype='f')
+            label_price = price_one_hot(price)
+            label_brand = brand_one_hot(brand)
+            total += 1
+
+        else:
+            img_path = img_path[:-4] + '.png'
+            if os.path.exists(img_path):
+
+            # image load with .png format
+                img = plt.imread(img_path)
+                img = np.array(img, dtype='f')[:,:,:-1]
+                label_price = price_one_hot(price)
+                label_brand = brand_one_hot(brand)
+                total += 1
+            else:
+                continue
+
+
+        pred_brand, pred_price = onlyimage(img, model_brand, model_price)
+
+        if np.array_equal(pred_brand, label_brand):
+            correct_brand +=1
+        if np.array_equal(pred_price, label_price):
+            correct_price +=1
+
+        confusion_brand[np.argmax(pred_brand)][np.argmax(label_brand)] += 1
+        confusion_price[np.argmax(pred_price)][np.argmax(label_price)] += 1
+
+    plt.matshow(confusion_brand)
+    plt.colorbar()
+    plt.title('Confusion matrix - brand')
+    plt.show()
+
+    plt.matshow(confusion_price)
+    plt.colorbar()
+    plt.title('Confusion matrix - price')
+    plt.show()
+
+    print(correct_brand, correct_price, total)
+    print('brand acc = %.2f %%' % (100.*correct_brand / total))
+    print('price acc = %.2f %%' % (100.*correct_price / total))
+
+
+
+if __name__ == '__main__':
+    main()
+
+# brand : 94.8%
+# price without brand : 82.3%
+# price with pred_brand : 80.2%
+
+# price without brand + aug : 77.1%
+# price with pred_brand + aug : 75%
