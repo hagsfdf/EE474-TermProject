@@ -27,7 +27,7 @@
 
 ## 모델 
 1. MNIST CNN 
-2. VGG-16 net (train accuracy 80~90% / test accuracy **40~50%**)
+2. VGG-16 net (train accuracy 80\~90% / test accuracy **40\~50%**)
 3. ResNet 
 
 ### Solution
