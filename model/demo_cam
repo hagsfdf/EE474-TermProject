@@ -1,0 +1,128 @@
+import matplotlib.image as mpimg
+from keras import backend as K
+import matplotlib.pyplot as plt
+from keras.models import load_model
+from keras import backend as K
+import numpy as np
+from keras.preprocessing import image
+from keras.applications.vgg16 import preprocess_input
+import cv2
+import os
+
+def cam(img_path, model, j, real_price):
+
+    # print model.summary()
+    img = image.load_img(img_path, target_size=(180, 180))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    # x = preprocess_input(x)
+
+    img = cv2.resize(x[0], (180,180))
+    # plt.imshow(img/255.)
+    # plt.show()
+
+    preds = model.predict(x)
+
+    # print preds
+
+    argmax = np.argmax(preds[0])  # Q1. argmax of model prediction result
+    output = model.output[:, argmax]
+    last_conv_layer = model.get_layer('block5_conv3')  # Q2. what is block number & conv. layer number for last conv. layer?
+
+
+    grads = K.gradients(output, last_conv_layer.output)[0]
+    pooled_grads = K.mean(grads, axis=(0, 1, 2))
+    iterate = K.function([model.input], [pooled_grads, last_conv_layer.output[0]])
+    pooled_grads_value, conv_layer_output_value = iterate([x])
+    for i in range(512):  # Q3. HoAw many iterations?
+        conv_layer_output_value[:, :, i] *= pooled_grads_value[i]
+
+    heatmap = np.mean(conv_layer_output_value, axis=-1)
+    heatmap = np.maximum(heatmap, 0)
+    heatmap /= np.max(heatmap)
+
+    img = cv2.imread(img_path)
+    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+
+    plt.figure()
+    plt.imshow(heatmap, cmap= 'jet')
+    plt.colorbar()
+
+
+    superimposed_img = 0.8* heatmap  + 0.6 *img
+    output = 'camImage/output_'+str(real_price)+'_'+str(j)+'.jpg'
+    cv2.imwrite(output, superimposed_img)
+    img = mpimg.imread(output)
+    plt.imshow(img)
+    plt.savefig(output, format='jpg')
+
+    plt.close()
+
+    print np.shape(heatmap)
+
+    return heatmap
+
+
+
+def main():
+
+    basicDir = './imageBrand/train.npy'
+    data = np.load(basicDir)
+    price = data['price']
+    brand = data['brand']
+
+    brand_list = ['adidas','descente','fila','gucci','asics']
+
+    # model_price = load_model('model_brand_predictor.h5')
+    model_price = load_model('model_price_predictor_without_brand.h5')
+
+    print('model loading...')
+
+
+    adidas = []
+    descente = []
+    fila = []
+    gucci = []
+    asics = []
+
+    heat = np.zeros([180,180,3])
+
+    for i, img_path in enumerate(data['dir']):
+        img_path = './imageBrand/' + img_path[-10:]
+
+        if not os.path.exists(img_path):
+            img_path = img_path[:-4] + '.png'
+
+            if not os.path.exists(img_path):
+                continue
+
+        real_price = price[i]
+        cam(img_path, model_price, i, real_price)
+
+
+    #     if np.array_equal(brand[i], brand_list[0]) :
+    #         adidas.append(np.log10(real_price))
+    #     elif np.array_equal(brand[i], brand_list[1]) :
+    #         descente.append(np.log10(real_price))
+    #     elif np.array_equal(brand[i], brand_list[2]) :
+    #         fila.append(np.log10(real_price))
+    #     elif np.array_equal(brand[i], brand_list[3]) :
+    #         gucci.append(np.log10(real_price))
+    #     elif np.array_equal(brand[i], brand_list[4]) :
+    #         asics.append(np.log10(real_price))
+    #
+    #
+    #     print i, real_price
+    #
+    # plt.boxplot((adidas, descente, fila, gucci, asics))
+    # plt.grid()
+    # plt.ylim([4, 7])
+    # plt.ylabel('log scale')
+    # plt.title('Boxplot of log(price) & brand relationship')
+    # plt.show()
+
+
+if __name__ == '__main__':
+    main()
