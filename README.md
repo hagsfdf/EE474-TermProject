@@ -1,5 +1,7 @@
 이것은 EE474 term project repo입니다.
 
+# [Final_Presentation](https://1drv.ms/p/s!AqC81ul3K2yngR08LlMlPLL0VwBs)
+
 # Project Goal
 
 해당 모델은 한정된 브랜드의 신발 사진을 가지고, 그 가격을 유추하는 VGG 모델입니다. 이를 위해 신발 이미지에서 브랜드를 유추하는 모델, 신발 이미지와 브랜드를 함께 사용하여 그 가격을 유추하는 모델 두 개를 개발하였습니다.
